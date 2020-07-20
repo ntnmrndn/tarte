@@ -59,6 +59,7 @@ public class Tarte: NSObject, StreamDelegate {
         case readingFile(header: Tar.Header, stream: OutputStream, remainingSize: Int)
         case readingHeader(remainingSize: Int)
         case readingPadding(remainingSize: Int)
+        case readingLocalExtendedHeader(header: Tar.Header, remainingSize: Int)
         case finished
     }
     private var state: State = .readingHeader(remainingSize: Tar.Header.size)
@@ -70,6 +71,7 @@ public class Tarte: NSObject, StreamDelegate {
     private var streamReadSemaphore = DispatchSemaphore(value: 0)
     private var isWaiting = false
     private var foundTarHeader = false
+    private var localExtendedHeader: Tar.ExtendedLocalHeader?
 
     public init(stream: InputStream, destination: URL, resultBlock: @escaping (Result<Void, Swift.Error>) -> Void) {
         self.stream = stream
@@ -78,7 +80,7 @@ public class Tarte: NSObject, StreamDelegate {
     }
 
     private static func isFooter(buffer: UnsafeMutablePointer<UInt8>) -> Bool {
-        for i in (0...Tar.Header.size) {
+        for i in (0..<Tar.Header.size) {
             if buffer[i] != 0 {
                 return false
             }
@@ -105,7 +107,8 @@ public class Tarte: NSObject, StreamDelegate {
                 let path = destination.appendingPathComponent(header.fileName, isDirectory: true)
                 try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true, attributes: nil)
             case .file:
-                let path = destination.appendingPathComponent(header.fileName, isDirectory: true)
+                let path = destination.appendingPathComponent(localExtendedHeader?.path ?? header.fileName, isDirectory: true)
+                try FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
                 FileManager.default.createFile(atPath: path.path, contents: nil, attributes: nil)
                 if header.fileSize > 0 {
                     guard let outputStream = OutputStream(url: path, append: false) else {
@@ -114,9 +117,12 @@ public class Tarte: NSObject, StreamDelegate {
                     outputStream.open()
                     self.state = .readingFile(header: header, stream: outputStream, remainingSize: header.fileSize)
                 }
+            case .extendedLocalHeader:
+                self.state = .readingLocalExtendedHeader(header: header, remainingSize: Tar.ExtendedLocalHeader.size)
             default:
                 throw Error.unsupportedType
             }
+            self.localExtendedHeader = nil
             let nextConsumedBytes = try consume(buffer: buffer.advanced(by: Tar.Header.size), lenght: lenght - Tar.Header.size)
             return Tar.Header.size + nextConsumedBytes
         case .readingFile(header: let header, stream: let stream, remainingSize: let remainingSize):
@@ -146,6 +152,11 @@ public class Tarte: NSObject, StreamDelegate {
             }
             let nextConsumedBytes = try consume(buffer: buffer.advanced(by: paddingBytesConsumed), lenght: lenght - paddingBytesConsumed)
             return paddingBytesConsumed + nextConsumedBytes
+        case .readingLocalExtendedHeader(header: _, remainingSize:  _):
+            self.localExtendedHeader = try Tar.ExtendedLocalHeader(buffer: buffer)
+            state = .readingHeader(remainingSize: Tar.Header.size)
+            let nextConsumedBytes = try consume(buffer: buffer.advanced(by: Tar.Header.size), lenght: lenght - Tar.Header.size)
+            return Tar.ExtendedLocalHeader.size + nextConsumedBytes
         }
     }
 

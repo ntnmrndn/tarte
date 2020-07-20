@@ -38,6 +38,25 @@ class TarteTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: untaredFile.path), "Expected a file but no file was created")
     }
 
+
+    func testLargeFilesAtSubPath() throws {
+        let tarURL = Bundle(for: type(of: self)).url(forResource: "large_files", withExtension: "tar")!
+        let untarURL = try cleanTargetURL()
+        let root = untarURL
+            .appendingPathComponent("Users", isDirectory: true)
+            .appendingPathComponent("antoine.marandon", isDirectory: true)
+            .appendingPathComponent("Desktop", isDirectory: true)
+        XCTAssertNoThrow(try Tarte.unTar(tarURL, to: untarURL))
+        do {
+            let untaredFile = root.appendingPathComponent("file1.png", isDirectory: false)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: untaredFile.path), "Expected a file but no file was created")
+        }
+        do {
+            let untaredFile = root.appendingPathComponent("file2.png", isDirectory: false)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: untaredFile.path), "Expected a file but no file was created")
+        }
+    }
+
     func testFileWithContentNoXattr() throws {
         let tarURL = Bundle(for: type(of: self)).url(forResource: "single_hi_file_named_toto_no_xattr", withExtension: "tar")!
         let untarURL = try cleanTargetURL()
