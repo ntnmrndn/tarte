@@ -45,9 +45,7 @@ enum Tar {
                 default:
                     break // skip unknown keywords.
                 }
-
                 i += lenght
-
             }
             self.path = path
         }
@@ -66,6 +64,8 @@ enum Tar {
         static let fileTypeOffset = 156
         static let linkNameOffset = 157
         static let linkNameLenght = 100
+        static let prefixOffset = 345
+        static let prefixLenght = 155
 
         enum Error: Swift.Error {
             case badMagic
@@ -115,6 +115,7 @@ enum Tar {
         //        char devminor[8];             /* 337 */
         //        char prefix[155];             /* 345 */
         let fileName: String
+        let prefix: String
         let fileSize: Int
         let fileType: TypeFlag
         /// As much as I hate copying data, we can't trust strings to be nil terminated, so either make a copy or make available a strntol implementation
@@ -134,10 +135,11 @@ enum Tar {
             self.fileName = try safeString(buffer.advanced(by: Self.fileNameOffset), lenght: Self.fileNameLenght)
             self.fileSize = try safeStrtol(buffer.advanced(by: Self.fileSizeOffset), lenght: Self.fileSizeLenght, base: 8)
             self.fileType = try .init(buffer[Self.fileTypeOffset], linkNameBuffer: buffer.advanced(by: Self.linkNameOffset))
+            self.prefix = try safeString(buffer.advanced(by: Self.prefixOffset), lenght: Self.prefixLenght)
         }
 
         var padding: Int {
-            Tar.blockSize - fileSize % Tar.blockSize
+            (Tar.blockSize - fileSize % Tar.blockSize) % Tar.blockSize
         }
     }
 

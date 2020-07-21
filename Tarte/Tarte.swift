@@ -14,9 +14,6 @@ import SwiftGlibc
 import Darwin
 #endif
 
-private struct Header {
-}
-
 fileprivate extension InputStream {
     var isFinished: Bool {
         if self.hasBytesAvailable {
@@ -68,11 +65,9 @@ public class Tarte: NSObject, StreamDelegate {
 
     private let destination: URL
     private var resultBlock:((Result<Void, Swift.Error>) -> Void)?
-    private var streamReadSemaphore = DispatchSemaphore(value: 0)
-    private var isWaiting = false
+    private var streamSemaphore = DispatchSemaphore(value: 0)
     private var foundTarHeader = false
     private var localExtendedHeader: Tar.ExtendedLocalHeader?
-
     public init(stream: InputStream, destination: URL, resultBlock: @escaping (Result<Void, Swift.Error>) -> Void) {
         self.stream = stream
         self.destination = destination
@@ -91,6 +86,7 @@ public class Tarte: NSObject, StreamDelegate {
     /// Consume attempt to read the buffer, and return the number of bit read.
     /// If this number if smaller than the readBufferAvailableLenght, it means we cannot make use of the data, and the buffer should be filled with more data before attempting to consume() again.
     private func consume(buffer: UnsafeMutablePointer<UInt8>, lenght: Int) throws -> Int {
+        guard lenght > 0 else { return 0 }
         switch state {
         case .readingHeader(remainingSize: let remainingSize):
             if lenght < remainingSize {
@@ -107,7 +103,13 @@ public class Tarte: NSObject, StreamDelegate {
                 let path = destination.appendingPathComponent(header.fileName, isDirectory: true)
                 try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true, attributes: nil)
             case .file:
-                let path = destination.appendingPathComponent(localExtendedHeader?.path ?? header.fileName, isDirectory: true)
+                let path: URL = {
+                    if let path = localExtendedHeader?.path {
+                        return destination.appendingPathComponent(path, isDirectory: false)
+                    }
+                    return destination.appendingPathComponent(header.prefix, isDirectory: true)
+                        .appendingPathComponent(header.fileName, isDirectory: false)
+                }()
                 try FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
                 FileManager.default.createFile(atPath: path.path, contents: nil, attributes: nil)
                 if header.fileSize > 0 {
@@ -115,6 +117,8 @@ public class Tarte: NSObject, StreamDelegate {
                         throw Error.couldNotOpenOutputStream
                     }
                     outputStream.open()
+                    outputStream.delegate = self
+                    self.stream.schedule(in: .main, forMode: .default)
                     self.state = .readingFile(header: header, stream: outputStream, remainingSize: header.fileSize)
                 }
             case .extendedLocalHeader:
@@ -126,8 +130,10 @@ public class Tarte: NSObject, StreamDelegate {
             let nextConsumedBytes = try consume(buffer: buffer.advanced(by: Tar.Header.size), lenght: lenght - Tar.Header.size)
             return Tar.Header.size + nextConsumedBytes
         case .readingFile(header: let header, stream: let stream, remainingSize: let remainingSize):
+            guard stream.hasSpaceAvailable else {
+                return 0
+            }
             let writtenSize = stream.write(buffer, maxLength: min(remainingSize, lenght))
-
             if writtenSize < 0 {
                 throw Error.encounteredStreamError(stream.streamError)
             } else if remainingSize == writtenSize {
@@ -136,7 +142,6 @@ public class Tarte: NSObject, StreamDelegate {
                 let nextConsumedBytes = try self.consume(buffer: buffer.advanced(by: writtenSize), lenght: lenght - writtenSize)
                 return writtenSize + nextConsumedBytes
             } else if lenght - writtenSize > 0 {
-                //XXX The stream chocked at the massive amount of data we sent it. We should handle this case better, such as by waiting... but would it actually happen ?
                 self.state = .readingFile(header: header, stream: stream, remainingSize: remainingSize - writtenSize)
                 return writtenSize
             } else {
@@ -152,7 +157,10 @@ public class Tarte: NSObject, StreamDelegate {
             }
             let nextConsumedBytes = try consume(buffer: buffer.advanced(by: paddingBytesConsumed), lenght: lenght - paddingBytesConsumed)
             return paddingBytesConsumed + nextConsumedBytes
-        case .readingLocalExtendedHeader(header: _, remainingSize:  _):
+        case .readingLocalExtendedHeader(header: _, remainingSize:  let remainingSize):
+            if lenght < remainingSize {
+                return 0 // Ask for a full header to be written in the buffer.
+            }
             self.localExtendedHeader = try Tar.ExtendedLocalHeader(buffer: buffer)
             state = .readingHeader(remainingSize: Tar.Header.size)
             let nextConsumedBytes = try consume(buffer: buffer.advanced(by: Tar.Header.size), lenght: lenght - Tar.Header.size)
@@ -160,20 +168,37 @@ public class Tarte: NSObject, StreamDelegate {
         }
     }
 
-    func untar() {
+    private var outputStreamReady: Bool {
+        switch self.state {
+        case .readingFile(header: let header, stream: let stream, remainingSize: let remainingSize):
+            return remainingSize == 0 || stream.hasSpaceAvailable
+        case .finished:
+            return true
+        case .readingHeader(remainingSize: _):
+            return true
+        case .readingLocalExtendedHeader(header: _, remainingSize: _):
+            return true
+        case .readingPadding(remainingSize: _):
+            return true
+        }
+    }
+
+
+    private func untar() {
+        precondition(!Thread.isMainThread)
         stream.delegate = self
         stream.open()
         defer { stream.close() }
-        stream.schedule(in: .current, forMode: .default)
+        self.stream.schedule(in: .main, forMode: .default)
         let readBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity:
             self.readBufferSize)
         defer { readBuffer.deallocate() }
         var offset = 0
         do {
             while !stream.isFinished, resultBlock != nil {
-                if stream.hasBytesAvailable {
-                    assert(readBufferSize - offset > 0) //XXX trigger a failure/update for dynamic header sizes
-                    let sizeAvailable = stream.read(readBuffer.advanced(by: offset), maxLength: readBufferSize - offset)
+                if stream.hasBytesAvailable, self.outputStreamReady {
+                    let sizeAvailable = offset < readBufferSize ?
+                        stream.read(readBuffer.advanced(by: offset), maxLength: readBufferSize - offset) : 0 /// if buffer is full, skip and consume. Assume we stalled because of an output buffer
                     let consumedSize = try consume(buffer: readBuffer, lenght: sizeAvailable + offset)
                     switch consumedSize {
                     case 0:
@@ -189,7 +214,7 @@ public class Tarte: NSObject, StreamDelegate {
                         fatalError("Should not happen")
                     }
                 } else {
-                    streamReadSemaphore.wait()
+                    streamSemaphore.wait()
                 }
             }
             if foundTarHeader == false {
@@ -199,56 +224,40 @@ public class Tarte: NSObject, StreamDelegate {
             resultBlock?(.failure(error))
             resultBlock = nil
         }
-        resultBlock?(.success(()))
+        resultBlock?(. success(()))
         resultBlock = nil
     }
 
-    public func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
+    @objc dynamic public func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
         switch eventCode {
         case .endEncountered:
-            return // Do something ?
+        return // Do something ?
         case .errorOccurred:
             resultBlock?(
                 .failure(Error.encounteredStreamError(stream.streamError))
             )
             resultBlock = nil
         case .hasBytesAvailable:
-            if isWaiting {
-                streamReadSemaphore.signal()
-            }
+            streamSemaphore.signal()
             return
         case .hasSpaceAvailable,
              .openCompleted:
-            return
+            streamSemaphore.signal()
         default:
             assertionFailure("Unknow stream event occured") //XXX
             return
         }
     }
 
-    public static func unTar(_ url: URL, to: URL) throws {
+    public static func unTar(_ url: URL, to: URL, result: @escaping (Result<Void, Swift.Error>) -> Void) throws {
         guard let inputStream = InputStream(url: url) else {
             throw Error.couldNotConvertInputURLToStream
         }
-        try unTar(inputStream, to: to)
+        unTar(inputStream, to: to, result: result)
     }
 
-    public static func unTar(_ stream: InputStream, to: URL) throws {
-        let semaphore = DispatchSemaphore(value: 0)
-        var result: Result<Void, Swift.Error>?
-        let tarte = Tarte(stream: stream, destination: to, resultBlock: {
-            result = $0
-            semaphore.signal()
-        })
+    public static func unTar(_ stream: InputStream, to: URL, result: @escaping (Result<Void, Swift.Error>) -> Void) {
+        let tarte = Tarte(stream: stream, destination: to, resultBlock: result)
         tarte.untar()
-        semaphore.wait()
-        switch result {
-        case .success(_):
-            return
-        case .failure(let error):
-            throw error
-        case .none:
-            fatalError("Should never happen")
-        }
     }
 }

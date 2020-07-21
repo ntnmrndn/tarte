@@ -10,7 +10,6 @@
 		FC17F85E24C1845300E71058 /* single_hi_file_named_toto_no_xattr.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC17F85D24C1845300E71058 /* single_hi_file_named_toto_no_xattr.tar */; };
 		FC17F86024C1906E00E71058 /* two_hi_file_named_toto_tata_no_xattr.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC17F85F24C1906E00E71058 /* two_hi_file_named_toto_tata_no_xattr.tar */; };
 		FC17F86224C191E400E71058 /* Tar.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC17F86124C191E400E71058 /* Tar.swift */; };
-		FC17F86424C1975700E71058 /* empty_file.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC17F86324C1975700E71058 /* empty_file.tar */; };
 		FC17F86624C1989200E71058 /* garbage_file.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC17F86524C1989200E71058 /* garbage_file.tar */; };
 		FC17F86924C19A5900E71058 /* long_garbage_file.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC17F86824C19A5900E71058 /* long_garbage_file.tar */; };
 		FC17F86B24C19CEB00E71058 /* hi_file_in_toto_directory_no_xattr.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC17F86A24C19CEB00E71058 /* hi_file_in_toto_directory_no_xattr.tar */; };
@@ -23,6 +22,10 @@
 		FC1BEE9D24BFFFFB009D5347 /* Tarte.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1BEE9C24BFFFFB009D5347 /* Tarte.swift */; };
 		FC1BEEA224C019D3009D5347 /* single_0_bit_file_named_toto_no_xattr.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC1BEEA124C019D3009D5347 /* single_0_bit_file_named_toto_no_xattr.tar */; };
 		FC26736E24C5833C0073E4A3 /* large_files.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC26736D24C5833C0073E4A3 /* large_files.tar */; };
+		FC26737224C5A0AB0073E4A3 /* expresso.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC26737124C5A0AB0073E4A3 /* expresso.tar */; };
+		FC26737624C5A35E0073E4A3 /* tarte.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC26737524C5A35E0073E4A3 /* tarte.tar */; };
+		FC26737824C5A3C50073E4A3 /* empty_file.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC26737724C5A3C40073E4A3 /* empty_file.tar */; };
+		FC2A0EA324C68A4C005253A8 /* prefix.tar in Resources */ = {isa = PBXBuildFile; fileRef = FC2A0EA224C68A4C005253A8 /* prefix.tar */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,7 +42,6 @@
 		FC17F85D24C1845300E71058 /* single_hi_file_named_toto_no_xattr.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = single_hi_file_named_toto_no_xattr.tar; sourceTree = "<group>"; };
 		FC17F85F24C1906E00E71058 /* two_hi_file_named_toto_tata_no_xattr.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = two_hi_file_named_toto_tata_no_xattr.tar; sourceTree = "<group>"; };
 		FC17F86124C191E400E71058 /* Tar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tar.swift; sourceTree = "<group>"; };
-		FC17F86324C1975700E71058 /* empty_file.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = empty_file.tar; sourceTree = "<group>"; };
 		FC17F86524C1989200E71058 /* garbage_file.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = garbage_file.tar; sourceTree = "<group>"; };
 		FC17F86824C19A5900E71058 /* long_garbage_file.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = long_garbage_file.tar; sourceTree = "<group>"; };
 		FC17F86A24C19CEB00E71058 /* hi_file_in_toto_directory_no_xattr.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = hi_file_in_toto_directory_no_xattr.tar; sourceTree = "<group>"; };
@@ -56,6 +58,10 @@
 		FC1BEE9C24BFFFFB009D5347 /* Tarte.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tarte.swift; sourceTree = "<group>"; };
 		FC1BEEA124C019D3009D5347 /* single_0_bit_file_named_toto_no_xattr.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = single_0_bit_file_named_toto_no_xattr.tar; sourceTree = "<group>"; };
 		FC26736D24C5833C0073E4A3 /* large_files.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = large_files.tar; sourceTree = "<group>"; };
+		FC26737124C5A0AB0073E4A3 /* expresso.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = expresso.tar; sourceTree = "<group>"; };
+		FC26737524C5A35E0073E4A3 /* tarte.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = tarte.tar; sourceTree = "<group>"; };
+		FC26737724C5A3C40073E4A3 /* empty_file.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = empty_file.tar; sourceTree = "<group>"; };
+		FC2A0EA224C68A4C005253A8 /* prefix.tar */ = {isa = PBXFileReference; lastKnownFileType = archive.tar; path = prefix.tar; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,9 +134,12 @@
 				FC26736D24C5833C0073E4A3 /* large_files.tar */,
 				FC17F87024C1A86500E71058 /* big_files.tar */,
 				FC17F86524C1989200E71058 /* garbage_file.tar */,
+				FC26737724C5A3C40073E4A3 /* empty_file.tar */,
 				FC17F86824C19A5900E71058 /* long_garbage_file.tar */,
+				FC26737524C5A35E0073E4A3 /* tarte.tar */,
 				FC17F86C24C1A0EC00E71058 /* emoji.tar */,
-				FC17F86324C1975700E71058 /* empty_file.tar */,
+				FC26737124C5A0AB0073E4A3 /* expresso.tar */,
+				FC2A0EA224C68A4C005253A8 /* prefix.tar */,
 			);
 			path = Ressources;
 			sourceTree = "<group>";
@@ -236,13 +245,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC1BEEA224C019D3009D5347 /* single_0_bit_file_named_toto_no_xattr.tar in Resources */,
-				FC17F86424C1975700E71058 /* empty_file.tar in Resources */,
+				FC26737624C5A35E0073E4A3 /* tarte.tar in Resources */,
+				FC2A0EA324C68A4C005253A8 /* prefix.tar in Resources */,
+				FC26737224C5A0AB0073E4A3 /* expresso.tar in Resources */,
 				FC17F86D24C1A0EC00E71058 /* emoji.tar in Resources */,
 				FC17F86624C1989200E71058 /* garbage_file.tar in Resources */,
 				FC17F86924C19A5900E71058 /* long_garbage_file.tar in Resources */,
 				FC17F86B24C19CEB00E71058 /* hi_file_in_toto_directory_no_xattr.tar in Resources */,
 				FC17F87124C1A86500E71058 /* big_files.tar in Resources */,
 				FC17F86F24C1A20800E71058 /* long_names.tar in Resources */,
+				FC26737824C5A3C50073E4A3 /* empty_file.tar in Resources */,
 				FC26736E24C5833C0073E4A3 /* large_files.tar in Resources */,
 				FC17F86024C1906E00E71058 /* two_hi_file_named_toto_tata_no_xattr.tar in Resources */,
 				FC17F85E24C1845300E71058 /* single_hi_file_named_toto_no_xattr.tar in Resources */,
